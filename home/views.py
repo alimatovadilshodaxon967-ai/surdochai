@@ -191,7 +191,13 @@ class VoicePageView(View):
 
 VOICE_AUDIO_CACHE = {}
 
-VOICELAB_API_KEY = "vlk_3ZT5rV4nRPDlS-Tj4Gajmv9J-y0y04qlWc0-dSXPFio"
+VOICELAB_API_KEYS = [
+    "vlk_e7R8sSc93z-qo11q2uauHiEhNeyzx4jeCbnJab4QfXM",  # Asosiy kalit
+    "vlk_srm9l7U767RcNOLB8EehYML8HUsnt5KqLsJmia4-I1U",  # 1-Zaxira kalit
+    "vlk_V7vy1tQvhAiGuU5y4vsTsJqcRRfVIEFnzpdJdIF5ods",  # 2-Zaxira kalit
+]
+CURRENT_KEY_INDEX = 0
+
 VOICELAB_VOICES = {
     "madina": "voice_4ef06e6b-2229-4023-ad66-c2a7a2b736ff",   # Madina — Honey (Shirali ayol)
     "amir": "voice_8bae02c6-d078-4757-9d62-0fce6da23cf7",     # Amir — Storyteller (Shirali erkak)
@@ -204,45 +210,33 @@ VOICELAB_VOICES = {
 
 class TTSView(View):
     async def get(self, request):
-        import edge_tts
         import hashlib
         import os
         import json
         import urllib.request
+        import urllib.error
         import asyncio
         from django.conf import settings
 
         text = request.GET.get('text', '').strip()
         voice = request.GET.get('voice', 'madina').lower()
-        lang = request.GET.get('lang', 'uz').lower()
         if not text:
             return HttpResponse(status=400)
 
-        # O'zbekistonga xos, milliy, ta'limiy va shirali ovozlar:
-        if 'amir' in voice or 'sardor' in voice or 'george' in voice or 'erkak' in voice:
-            neural_voice = "uz-UZ-SardorNeural"
-            rate = "+0%"
-            pitch = "+0Hz"
+        is_gemini_voice = ('gemini' in voice or 'google' in voice)
+
+        # VoiceLab & Gemini milliy o'zbek ovozlari
+        if is_gemini_voice:
+            voicelab_id = "gemini_flash_tts"
+        elif 'amir' in voice or 'sardor' in voice or 'george' in voice or 'erkak' in voice:
             voicelab_id = VOICELAB_VOICES["amir"]
         elif 'javohir' in voice or 'jasur' in voice:
-            neural_voice = "uz-UZ-SardorNeural"
-            rate = "+2%"
-            pitch = "+0Hz"
             voicelab_id = VOICELAB_VOICES["javohir"]
         elif 'kamola' in voice or 'mohira' in voice or 'mayin' in voice:
-            neural_voice = "uz-UZ-MadinaNeural"
-            rate = "-3%"
-            pitch = "+2Hz"
             voicelab_id = VOICELAB_VOICES["kamola"]
         elif 'abdulhay' in voice:
-            neural_voice = "uz-UZ-SardorNeural"
-            rate = "+0%"
-            pitch = "+0Hz"
             voicelab_id = VOICELAB_VOICES["abdulhay"]
         else: # Madina (standart)
-            neural_voice = "uz-UZ-MadinaNeural"
-            rate = "+0%"
-            pitch = "+0Hz"
             voicelab_id = VOICELAB_VOICES["madina"]
 
         # Kesh tekshirish (Disk va Xotira - 0ms javob)
@@ -263,28 +257,73 @@ class TTSView(View):
             except Exception:
                 pass
 
-        # 1-bosqich: VoiceLab.uz API orqali sof milliy o'zbek neyron ovoz sintezi
+        # Uzluksiz Ovoz Sintezi: Google Gemini TTS yoki VoiceLab.uz API
         loop = asyncio.get_event_loop()
-        def try_voicelab():
+        def synthesize_speech():
+            global CURRENT_KEY_INDEX, CURRENT_GEMINI_KEY_INDEX
+
+            # 1. Agar foydalanuvchi Gemini AI ovozini tanlagan bo'lsa
+            if is_gemini_voice:
+                total_g_keys = len(GEMINI_API_KEYS)
+                for attempt in range(total_g_keys):
+                    idx = (CURRENT_GEMINI_KEY_INDEX + attempt) % total_g_keys
+                    api_key = GEMINI_API_KEYS[idx]
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash-lite-tts:generateContent?key={api_key}"
+                    payload = json.dumps({"contents": [{"parts": [{"text": text}]}]}).encode("utf-8")
+                    req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+                    try:
+                        with urllib.request.urlopen(req, timeout=12) as resp:
+                            data = json.loads(resp.read().decode("utf-8"))
+                            b64 = data["candidates"][0]["content"]["parts"][0]["inlineData"]["data"]
+                            CURRENT_GEMINI_KEY_INDEX = idx
+                            return base64.b64decode(b64)
+                    except Exception as ge:
+                        print(f"Gemini TTS kalit [{idx + 1}/{total_g_keys}] xatolik: {ge}")
+                        continue
+
+            # 2. VoiceLab.uz milliy ovozlari (yoki Gemini zaxirasi)
             url = "https://api.voicelab.uz/v1/tts"
+            vl_id = voicelab_id if not is_gemini_voice else VOICELAB_VOICES["madina"]
             payload = json.dumps({
                 "text": text,
-                "voice_id": voicelab_id,
+                "voice_id": vl_id,
                 "language": "uz"
             }).encode("utf-8")
-            req = urllib.request.Request(
-                url,
-                data=payload,
-                headers={
-                    "Authorization": f"Bearer {VOICELAB_API_KEY}",
-                    "Content-Type": "application/json"
-                }
-            )
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                return resp.read()
+
+            last_error = None
+            total_keys = len(VOICELAB_API_KEYS)
+
+            for attempt in range(total_keys):
+                idx = (CURRENT_KEY_INDEX + attempt) % total_keys
+                api_key = VOICELAB_API_KEYS[idx]
+                req = urllib.request.Request(
+                    url,
+                    data=payload,
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json"
+                    }
+                )
+                try:
+                    with urllib.request.urlopen(req, timeout=12) as resp:
+                        if resp.status == 200:
+                            CURRENT_KEY_INDEX = idx  # Muvaffaqiyatli kalitni joriy qilib saqlash
+                            return resp.read()
+                except urllib.error.HTTPError as he:
+                    last_error = he
+                    print(f"VoiceLab API kalit [{idx + 1}/{total_keys}] limiti yoki xatosi ({he.code}), keyingi zaxira kalitga o'tilmoqda...")
+                    continue
+                except Exception as ex:
+                    last_error = ex
+                    print(f"VoiceLab API kalit [{idx + 1}/{total_keys}] ulanish xatosi: {ex}")
+                    continue
+
+            if last_error:
+                raise last_error
+            return None
 
         try:
-            audio_stream = await loop.run_in_executor(None, try_voicelab)
+            audio_stream = await loop.run_in_executor(None, synthesize_speech)
             if audio_stream:
                 VOICE_AUDIO_CACHE[cache_key] = audio_stream
                 try:
@@ -293,30 +332,11 @@ class TTSView(View):
                 except Exception:
                     pass
                 return HttpResponse(audio_stream, content_type="audio/wav")
-        except Exception as vl_err:
-            print("VoiceLab API call error, falling back to neural TTS:", vl_err)
-
-        # 2-bosqich: O'zbek milliy ta'limiy neyron TTS (Madina & Sardor)
-        try:
-            comm = edge_tts.Communicate(text, neural_voice, rate=rate, pitch=pitch)
-            audio_stream = b""
-            async for chunk in comm.stream():
-                if chunk["type"] == "audio":
-                    audio_stream += chunk["data"]
-
-            if audio_stream:
-                VOICE_AUDIO_CACHE[cache_key] = audio_stream
-                try:
-                    with open(disk_file, 'wb') as df:
-                        df.write(audio_stream)
-                except Exception as ef:
-                    print("Cache write error:", ef)
-                return HttpResponse(audio_stream, content_type="audio/mpeg")
             else:
-                return HttpResponse(status=500)
-        except Exception as e:
-            print("Neyron TTS sintez xatosi:", e)
-            return HttpResponse(f"Ovoz sintezi xatosi: {e}", status=503)
+                return HttpResponse("Ovoz sintezi audio qaytarmadi", status=500)
+        except Exception as vl_err:
+            print("Ovoz sintezi xatosi:", vl_err)
+            return HttpResponse(f"Ovoz sintezi xatosi: {vl_err}", status=503)
 
 
 class GestureListView(View):
@@ -380,11 +400,104 @@ class GestureMatchView(View):
         return JsonResponse({'match': False, 'message': 'Imo-ishora topilmadi'}, status=404)
 
 
+GEMINI_API_KEYS = [
+    os.getenv("GEMINI_API_KEY", base64.b64decode("QVEuQWI4Uk42S0xvOGQ0Qmw3MlpRZl9TNkFya3VDTHdMaUc4RVZEVkxwVnVXdUU1MEh3bGc=").decode("utf-8")),
+    base64.b64decode("QVEuQWI4Uk42SWZIRWx5eld0aHRfRGp6aW0xanNNRzdRbGtDQWFzbVVPRTNONFdrZE9FOFE=").decode("utf-8"),
+    base64.b64decode("QVEuQWI4Uk42SkUzN3R4czZVY0VRLWtaZ0FiejBYb0p5dnNMV1d5aTRwd2YwWVgwUV9jVXc=").decode("utf-8")
+]
+CURRENT_GEMINI_KEY_INDEX = 0
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class AIAssistantView(View):
+    async def post(self, request):
+        import json
+        import urllib.request
+        import urllib.error
+        from django.http import JsonResponse
+        import asyncio
+
+        try:
+            body = json.loads(request.body.decode('utf-8'))
+        except Exception:
+            body = {}
+
+        question = body.get('question', '').strip()
+        lang = body.get('lang', 'uz').lower()
+
+        if not question:
+            return JsonResponse({'status': 'error', 'message': 'Savol kiritilmadi'}, status=400)
+
+        lang_name = "O'zbek tili" if lang == 'uz' else ("English" if lang == 'en' else "Русский язык")
+        system_instruction = (
+            "Siz Surdo AI loyihasining o'zbek tilidagi ovozli aqlli yordamchisisiz. "
+            f"Foydalanuvchi mikrofonda savol berdi. {lang_name}da juda samimiy, madaniy, "
+            "odobli va qisqa (1-2 jumlada) aniq javob bering. "
+            "QAT'IY QOIDA: Javob VoiceLab orqali ovozda o'qiladi, shuning uchun "
+            "yulduzchalar (*), panjara (#), markdown, emoji yoki murakkab belgilar mutlaqo ishlatmang!"
+        )
+
+        payload = {
+            "system_instruction": {"parts": [{"text": system_instruction}]},
+            "contents": [{"parts": [{"text": question}]}],
+            "generationConfig": {"temperature": 0.3}
+        }
+
+        loop = asyncio.get_event_loop()
+        def ask_gemini():
+            global CURRENT_GEMINI_KEY_INDEX
+            total_keys = len(GEMINI_API_KEYS)
+            last_error = None
+
+            for attempt in range(total_keys):
+                idx = (CURRENT_GEMINI_KEY_INDEX + attempt) % total_keys
+                api_key = GEMINI_API_KEYS[idx]
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key={api_key}"
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode('utf-8'),
+                    headers={'Content-Type': 'application/json'}
+                )
+                try:
+                    with urllib.request.urlopen(req, timeout=10) as resp:
+                        data = json.loads(resp.read().decode('utf-8'))
+                        text = data['candidates'][0]['content']['parts'][0]['text'].strip()
+                        if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
+                            text = text[1:-1].strip()
+                        CURRENT_GEMINI_KEY_INDEX = idx
+                        return text
+                except urllib.error.HTTPError as he:
+                    last_error = he
+                    print(f"Gemini Assistant kalit [{idx + 1}/{total_keys}] xatolik ({he.code}): keyingi zaxira kalitga o'tilmoqda...")
+                    continue
+                except Exception as ex:
+                    last_error = ex
+                    print(f"Gemini Assistant kalit [{idx + 1}/{total_keys}] ulanish xatosi: {ex}")
+                    continue
+
+            if last_error:
+                raise last_error
+            return "Kechirasiz, hozir savolingizga javob bera olmadim."
+
+        try:
+            answer = await loop.run_in_executor(None, ask_gemini)
+            return JsonResponse({'status': 'success', 'question': question, 'answer': answer, 'model': 'Google Gemini'})
+        except Exception as e:
+            print("Gemini Assistant error:", e)
+            return JsonResponse({
+                'status': 'success',
+                'question': question,
+                'answer': "Kechirasiz, savolingizga javob berishda ulanish xatosi yuz berdi.",
+                'model': 'Fallback'
+            })
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class AIGrammarView(View):
     async def post(self, request):
         import json
         import urllib.request
+        import urllib.error
         from django.http import JsonResponse
         import asyncio
 
@@ -408,7 +521,6 @@ class AIGrammarView(View):
             }
             return JsonResponse({'status': 'success', 'sentence': default_empty.get(lang, default_empty['uz'])})
 
-        gemini_api_key = os.getenv("GEMINI_API_KEY", base64.b64decode("QVEuQWI4Uk42S0xvOGQ0Qmw3MlpRZl9TNkFya3VDTHdMaUc4RVZEVkxwVnVXdUU1MEh3bGc=").decode("utf-8"))
         words_str = ", ".join(words)
 
         lang_name = "O'zbek tili" if lang == 'uz' else ("English" if lang == 'en' else "Русский язык")
@@ -421,7 +533,6 @@ class AIGrammarView(View):
         )
         prompt = f"Imo-ishoralar so'zlari: {words_str}. Til: {lang_name}"
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key={gemini_api_key}"
         payload = {
             "system_instruction": {"parts": [{"text": system_instruction}]},
             "contents": [{"parts": [{"text": prompt}]}],
@@ -430,17 +541,39 @@ class AIGrammarView(View):
 
         loop = asyncio.get_event_loop()
         def call_gemini():
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(payload).encode('utf-8'),
-                headers={'Content-Type': 'application/json'}
-            )
-            with urllib.request.urlopen(req, timeout=9) as resp:
-                data = json.loads(resp.read().decode('utf-8'))
-                text = data['candidates'][0]['content']['parts'][0]['text'].strip()
-                if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
-                    text = text[1:-1].strip()
-                return text
+            global CURRENT_GEMINI_KEY_INDEX
+            total_keys = len(GEMINI_API_KEYS)
+            last_error = None
+
+            for attempt in range(total_keys):
+                idx = (CURRENT_GEMINI_KEY_INDEX + attempt) % total_keys
+                api_key = GEMINI_API_KEYS[idx]
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key={api_key}"
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode('utf-8'),
+                    headers={'Content-Type': 'application/json'}
+                )
+                try:
+                    with urllib.request.urlopen(req, timeout=9) as resp:
+                        data = json.loads(resp.read().decode('utf-8'))
+                        text = data['candidates'][0]['content']['parts'][0]['text'].strip()
+                        if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
+                            text = text[1:-1].strip()
+                        CURRENT_GEMINI_KEY_INDEX = idx  # Muvaffaqiyatli kalitni saqlash
+                        return text
+                except urllib.error.HTTPError as he:
+                    last_error = he
+                    print(f"Gemini API kalit [{idx + 1}/{total_keys}] xatolik ({he.code}): keyingi zaxira kalitga o'tilmoqda...")
+                    continue
+                except Exception as ex:
+                    last_error = ex
+                    print(f"Gemini API kalit [{idx + 1}/{total_keys}] ulanish xatosi: {ex}")
+                    continue
+
+            if last_error:
+                raise last_error
+            return None
 
         try:
             sentence = await loop.run_in_executor(None, call_gemini)

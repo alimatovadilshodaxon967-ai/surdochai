@@ -2,8 +2,9 @@
 
 Loyiha Netlify serverless platformasi uchun 100% moslashtirildi va barcha kerakli fayllar tayyorlandi:
 - `dist/` — Optimizatsiya qilingan statik frontend (MediaPipe Edge AI, HTML5, CSS3, JS).
-- `netlify/functions/tts.js` — VoiceLab.uz neyron ovoz sintezatori (Serverless backend).
+- `netlify/functions/tts.js` — VoiceLab.uz va Google Gemini neyron ovoz sintezatori (Serverless backend).
 - `netlify/functions/ai-grammar.js` — Google Gemini sun'iy intellekt jumlalar generatori.
+- `netlify/functions/ai-assistant.js` — Google Gemini mikrofon savol-javob AI yordamchisi.
 - `netlify.toml` — Netlify routing, build va redirect konfiguratsiyasi.
 
 ---

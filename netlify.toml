@@ -24,6 +24,16 @@
   status = 200
 
 [[redirects]]
+  from = "/api/ai-assistant"
+  to = "/.netlify/functions/ai-assistant"
+  status = 200
+
+[[redirects]]
+  from = "/api/ai-assistant/"
+  to = "/.netlify/functions/ai-assistant"
+  status = 200
+
+[[redirects]]
   from = "/api/gestures"
   to = "/static/gestures.json"
   status = 200

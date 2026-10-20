@@ -308,28 +308,7 @@
             color: var(--primary);
         }
 
-        .btn-sos {
-            background: linear-gradient(135deg, #ff3366, #b5179e);
-            color: #fff;
-            border: none;
-            height: 34px;
-            padding: 0 13px;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: 0 0 16px rgba(255, 51, 102, 0.45);
-            transition: all 0.2s ease;
-            white-space: nowrap;
-        }
 
-        .btn-sos:hover {
-            transform: translateY(-1px) scale(1.02);
-            box-shadow: 0 0 22px rgba(255, 51, 102, 0.7);
-        }
 
         /* Bottom Section: Single Unified Master Dock */
         .hud-bottom {
@@ -695,6 +674,43 @@
             box-shadow: 0 0 24px rgba(0, 255, 136, 0.65);
         }
 
+        .action-btn.mic-btn {
+            background: linear-gradient(135deg, #ff8c00, #ff3366);
+            color: #ffffff;
+            padding: 0 14px;
+            font-weight: 700;
+            font-size: 13px;
+            border: none;
+            box-shadow: 0 0 16px rgba(255, 140, 0, 0.35);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .action-btn.mic-btn:hover {
+            transform: scale(1.04);
+            box-shadow: 0 0 22px rgba(255, 51, 102, 0.65);
+        }
+
+        .action-btn.mic-btn.recording {
+            background: linear-gradient(135deg, #ff0044, #cc0033);
+            box-shadow: 0 0 25px rgba(255, 0, 68, 0.85);
+            animation: micGlowPulse 1.1s infinite alternate ease-in-out;
+        }
+
+        @keyframes micGlowPulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 16px rgba(255, 0, 68, 0.5);
+            }
+            100% {
+                transform: scale(1.05);
+                box-shadow: 0 0 28px rgba(255, 0, 68, 0.95);
+            }
+        }
+
         /* 1. Spatial Holographic AR Speech Bubble (Anchored on Hand) */
         .ar-speech-bubble {
             position: fixed;
@@ -946,83 +962,7 @@
             display: flex;
         }
 
-        .sos-card {
-            background: #0f172a;
-            border: 2px solid var(--danger);
-            border-radius: 28px;
-            padding: 32px;
-            max-width: 480px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            box-shadow: 0 0 60px rgba(255, 51, 102, 0.4);
-            animation: cardAppear 0.3s ease;
-        }
 
-        .sos-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .sos-header h2 {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--danger);
-            font-size: 22px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .sos-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-
-        .sos-btn {
-            background: rgba(255, 51, 102, 0.1);
-            border: 2px solid var(--danger);
-            border-radius: 20px;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            text-decoration: none;
-            color: #fff;
-        }
-
-        .sos-btn:hover {
-            background: var(--danger);
-            transform: translateY(-4px);
-            box-shadow: 0 10px 25px rgba(255, 51, 102, 0.5);
-        }
-
-        .sos-btn i {
-            font-size: 32px;
-        }
-
-        .sos-btn span {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 20px;
-            font-weight: 800;
-        }
-
-        .sos-location {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-glass);
-            border-radius: 14px;
-            padding: 12px;
-            font-size: 13px;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
 
         /* 108 ta Baza Katalogi Modal oynasi */
         .catalog-card {
@@ -1331,7 +1271,7 @@
             <!-- Right Wing: Controls & Safety -->
             <div class="header-wing-right">
                 <!-- Controls & Safety -->
-                <button id="voice-select-btn" class="btn-ctrl active" title="VoiceLab milliy o'zbek ovozlarini tanlash (Madina, Amir, Javohir, Kamola, Abdulhay)">
+                <button id="voice-select-btn" class="btn-ctrl active" title="Ovoz tanlash: Madina, Gemini AI, Amir, Javohir, Kamola, Abdulhay">
                     <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent);"></i>
                     <span id="voice-name">Madina (VoiceLab)</span>
                 </button>
@@ -1344,11 +1284,6 @@
                 <button id="voice-toggle" class="btn-ctrl active" title="Ovozli eshittirishni yoqish/o'chirish">
                     <i class="fa-solid fa-volume-high"></i>
                     <span>Ovoz</span>
-                </button>
-
-                <button id="sos-open-btn" class="btn-sos" title="Favqulodda yordam chaqirish">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <span>SOS 103/102</span>
                 </button>
             </div>
         </header>
@@ -1427,6 +1362,10 @@
                             <i class="fa-solid fa-volume-high"></i>
                             <span>O'qish</span>
                         </button>
+                        <button id="mic-btn" class="action-btn mic-btn" title="Ovozli gapirish (Mikrofon — Speech to Speech)">
+                            <i class="fa-solid fa-microphone"></i>
+                            <span id="mic-btn-text">Mikrofon</span>
+                        </button>
                         <button id="copy-btn" class="action-btn icon-only" title="Matndan nusxa olish">
                             <i class="fa-solid fa-copy"></i>
                         </button>
@@ -1442,34 +1381,7 @@
         </div>
     </div>
 
-    <!-- SOS Modal -->
-    <div id="sos-modal" class="modal-overlay">
-        <div class="sos-card">
-            <div class="sos-header">
-                <h2><i class="fa-solid fa-shield-halved"></i> Tezkor Yordam (SOS)</h2>
-                <button id="sos-close-btn" class="btn-ctrl" style="padding: 6px 12px;"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <p style="font-size: 14px; color: var(--text-muted);">
-                Eshitish yoki so'zlashda imkoniyati cheklangan shaxslar uchun tezkor xizmatlarga bog'lanish:
-            </p>
-            <div class="sos-grid">
-                <a href="tel:103" class="sos-btn">
-                    <i class="fa-solid fa-truck-medical" style="color: #ff3366;"></i>
-                    <span>103</span>
-                    <small>Tez Tibbiy Yordam</small>
-                </a>
-                <a href="tel:102" class="sos-btn">
-                    <i class="fa-solid fa-building-shield" style="color: #4facfe;"></i>
-                    <span>102</span>
-                    <small>Ichki Ishlar (Militsiya)</small>
-                </a>
-            </div>
-            <div class="sos-location">
-                <i class="fa-solid fa-location-dot" style="color: var(--accent);"></i>
-                <span id="geo-coords">Joylashuv: Aniqlanmoqda...</span>
-            </div>
-        </div>
-    </div>
+
 
     <!-- O'zbek Imo-Ishoralari (So'zlar va Iboralar) Baza Katalogi Modali -->
     <div id="catalog-modal" class="modal-overlay">
@@ -1524,16 +1436,14 @@
         const sentenceChipsElem = document.getElementById('sentence-chips');
         const sentenceBox = document.getElementById('smart-master-dock');
         const speakAllBtn = document.getElementById('speak-all-btn');
+        const micBtn = document.getElementById('mic-btn');
+        const micBtnText = document.getElementById('mic-btn-text');
         const copyBtn = document.getElementById('copy-btn');
         const spaceBtn = document.getElementById('space-btn');
         const backspaceBtn = document.getElementById('backspace-btn');
         const clearBtn = document.getElementById('clear-btn');
 
-        // SOS Modal
-        const sosOpenBtn = document.getElementById('sos-open-btn');
-        const sosCloseBtn = document.getElementById('sos-close-btn');
-        const sosModal = document.getElementById('sos-modal');
-        const geoCoords = document.getElementById('geo-coords');
+
 
         // State
         let isVoiceEnabled = true;
@@ -1553,15 +1463,7 @@
         let frameCount = 0;
         let fps = 60;
 
-        // Geolocation
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    geoCoords.textContent = `Joylashuv: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
-                },
-                () => { geoCoords.textContent = "Joylashuv: Ruxsat berilmadi"; }
-            );
-        }
+
 
         // Faqat O'zbek tili (Platforma faqat O'zbekiston uchun)
         const currentLang = 'uz';
@@ -1685,11 +1587,12 @@
             };
         }
 
-        // Voice Selection & State (VoiceLab.uz Milliy O'zbek Shirali Ovozlar)
+        // Voice Selection & State (VoiceLab & Google Gemini AI Ovozlar)
         const voiceSelectBtn = document.getElementById('voice-select-btn');
         const voiceNameSpan = document.getElementById('voice-name');
         const UZ_VOICES = [
             { id: 'madina', name: "Madina (VoiceLab Shirali)", intro: "Assalomu alaykum! VoiceLab Madina shirali ovozi tanlandi." },
+            { id: 'gemini', name: "Gemini (Google AI)", intro: "Salom! Google Gemini sun'iy intellekt ovozi tanlandi." },
             { id: 'amir', name: "Amir (VoiceLab Bosiq)", intro: "Assalomu alaykum! VoiceLab Amir bosiq erkak ovozi tanlandi." },
             { id: 'javohir', name: "Javohir (VoiceLab Ta'limiy)", intro: "Assalomu alaykum! VoiceLab Javohir ta'limiy diktor ovozi tanlandi." },
             { id: 'kamola', name: "Kamola (VoiceLab Mayin)", intro: "Assalomu alaykum! VoiceLab Kamola mayin ovozi tanlandi." },
@@ -1905,6 +1808,172 @@
             });
         }
 
+        // ==========================================
+        // 🎙️ SPEECH-TO-SPEECH (STT -> VoiceLab TTS)
+        // ==========================================
+        let speechRecognition = null;
+        let isSpeechRecognizing = false;
+        const SpeechRecAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (micBtn) {
+            if (!SpeechRecAPI) {
+                micBtn.title = "Brauzeringiz ovozli tanishni qo'llab-quvvatlamaydi (Google Chrome yoki Edge tavsiya etiladi)";
+            }
+
+            micBtn.addEventListener('click', () => {
+                if (!SpeechRecAPI) {
+                    alert("Kechirasiz, brauzeringizda ovozni aniqlash (Speech Recognition) qo'llab-quvvatlanmadi. Iltimos, Google Chrome yoki Microsoft Edge brauzeridan foydalaning.");
+                    return;
+                }
+
+                if (isSpeechRecognizing) {
+                    stopSpeechToSpeech();
+                } else {
+                    startSpeechToSpeech();
+                }
+            });
+        }
+
+        function startSpeechToSpeech() {
+            try {
+                speechRecognition = new SpeechRecAPI();
+                speechRecognition.lang = 'uz-UZ';
+                speechRecognition.continuous = false; // Har bir jumladan so'ng VoiceLab orqali ovoz chiqarish
+                speechRecognition.interimResults = true;
+                speechRecognition.maxAlternatives = 1;
+
+                speechRecognition.onstart = () => {
+                    isSpeechRecognizing = true;
+                    if (micBtn) {
+                        micBtn.classList.add('recording');
+                        micBtn.innerHTML = '<i class="fa-solid fa-microphone-lines"></i> <span id="mic-btn-text">Savolingizni bering...</span>';
+                    }
+                    if (signText) {
+                        signText.textContent = "🎙️ Savolingizni bering, tinglanmoqda...";
+                        signText.classList.add('glow-text');
+                    }
+                    if (signIcon) signIcon.textContent = "🎙️";
+                };
+
+                let lastFinalText = '';
+
+                speechRecognition.onresult = (event) => {
+                    let interimTranscript = '';
+                    let finalTranscript = '';
+
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            finalTranscript += transcript;
+                        } else {
+                            interimTranscript += transcript;
+                        }
+                    }
+
+                    const activeSpeech = (finalTranscript || interimTranscript).trim();
+                    if (activeSpeech && signText) {
+                        signText.textContent = `🎙️ "${activeSpeech}"`;
+                    }
+
+                    if (finalTranscript.trim()) {
+                        lastFinalText = finalTranscript.trim();
+                    }
+                };
+
+                speechRecognition.onerror = (event) => {
+                    console.warn("Nutq aniqlash xatosi:", event.error);
+                    if (event.error === 'not-allowed') {
+                        alert("Mikrofondan foydalanishga ruxsat berilmadi. Iltimos, brauzer qatoridagi mikrofon belgisini bosib ruxsat bering.");
+                    }
+                    stopSpeechToSpeech();
+                };
+
+                speechRecognition.onend = () => {
+                    stopSpeechToSpeech();
+                    if (lastFinalText) {
+                        processSpeechToSpeech(lastFinalText);
+                        lastFinalText = '';
+                    }
+                };
+
+                speechRecognition.start();
+            } catch (err) {
+                console.error("Speech Recognition boshlashda xatolik:", err);
+                stopSpeechToSpeech();
+            }
+        }
+
+        function stopSpeechToSpeech() {
+            isSpeechRecognizing = false;
+            if (speechRecognition) {
+                try { speechRecognition.stop(); } catch(e) {}
+                speechRecognition = null;
+            }
+            if (micBtn) {
+                micBtn.classList.remove('recording');
+                micBtn.innerHTML = '<i class="fa-solid fa-microphone"></i> <span id="mic-btn-text">Mikrofon</span>';
+            }
+        }
+
+        async function processSpeechToSpeech(recognizedText) {
+            if (!recognizedText) return;
+
+            // 1. Foydalanuvchining aytgan savolini ekranda aks ettirish
+            showSignAlert(`"${recognizedText}"`, '🎙️', 'Sizning savolingiz');
+            if (micBtn) {
+                micBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles fa-spin" style="color: var(--accent);"></i> <span id="mic-btn-text">Gemini o\'ylamoqda...</span>';
+            }
+
+            try {
+                // 2. Google Gemini AI dan savolga aqlli, muloyim va qisqa javob olish
+                const res = await fetch('/api/ai-assistant/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: recognizedText, lang: currentLang })
+                });
+                const data = await res.json();
+                const aiAnswer = data.answer || "Kechirasiz, savolingizga javob tayyorlashda xatolik yuz berdi.";
+
+                // 3. Javobni suhbat kartasida ham to'liq ko'rsatish
+                if (aiGrammarCard && aiGrammarText) {
+                    const aiTitleWrap = document.querySelector('#ai-grammar-card .ai-title-wrap');
+                    if (aiTitleWrap) {
+                        aiTitleWrap.innerHTML = '<i class="fa-solid fa-robot" style="color: var(--accent);"></i> <span>Gemini AI Ovozli Yordamchi</span>';
+                    }
+                    aiGrammarText.innerHTML = `
+                        <div style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+                            <i class="fa-solid fa-user" style="color: #4facfe;"></i> <b>Savol:</b> "${recognizedText}"
+                        </div>
+                        <div style="font-size: 16px; color: #fff; line-height: 1.55;">
+                            <i class="fa-solid fa-robot" style="color: var(--accent);"></i> <b>Javob:</b> ${aiAnswer}
+                        </div>
+                    `;
+                    currentSynthesizedSentence = aiAnswer;
+                    aiGrammarCard.style.display = 'flex';
+                }
+
+                // 4. Pastki dock subtitrida ko'rsatish (Eshitishida nuqsoni bor shaxs o'qishi uchun)
+                showSignAlert(aiAnswer, '🤖', 'Gemini AI Javobi');
+
+                // 5. Javob so'zlarini MATN chiplariga kiritish
+                sentenceWords = [];
+                aiAnswer.split(/\s+/).filter(w => w && w.trim()).forEach(w => sentenceWords.push(w));
+                updateSentenceDisplay();
+
+                // 6. VoiceLab / Gemini ovozi orqali javobni jonli o'qib berish!
+                speakUzbek(aiAnswer);
+            } catch (err) {
+                console.warn("AI Assistant xatosi, echo ga o'tilmoqda:", err);
+                showSignAlert(recognizedText, '🎙️', 'Ovozli Nutq');
+                speakUzbek(recognizedText);
+            } finally {
+                if (micBtn) {
+                    micBtn.classList.remove('recording');
+                    micBtn.innerHTML = '<i class="fa-solid fa-microphone"></i> <span id="mic-btn-text">Mikrofon</span>';
+                }
+            }
+        }
+
         function updateSentenceDisplay(newWordIndex = -1) {
             const container = document.getElementById('sentence-chips');
             if (!container) return;
@@ -2094,13 +2163,7 @@
             });
         }
 
-        // SOS Modal Toggles
-        if (sosOpenBtn && sosModal) {
-            sosOpenBtn.addEventListener('click', () => sosModal.classList.add('open'));
-        }
-        if (sosCloseBtn && sosModal) {
-            sosCloseBtn.addEventListener('click', () => sosModal.classList.remove('open'));
-        }
+
 
         /* ==============================================================
            108 TA O'ZBEK IMO-ISHORA & DAKTIL BAZASI — DJANGO DATABASE DAN
